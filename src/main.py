@@ -13,6 +13,7 @@ Invoking the master thread etc
 import sys
 import json
 from map import Mapper
+from reduce import  Reducer
 # This function reads configs from the config file and returns mapper 
 # reducer and  input data file name.
 def read_configs(file_path):
@@ -47,8 +48,13 @@ class Master:
         if not mapper_path_exists:
             os.makedirs(mapper_dir)
         self.mapper_dir = mapper_dir
-        # Creating the final reduce directory where final output from reducer will save their output
-        # self.reducer_dir = f'./reducer/{self.worker_id}'
+
+        # Creating the final reduce output directory where final output from reducer will save their output
+        reduce_dir = f'./final_output/{self.worker_id}'
+        reducer_path_exists = os.path.exists(reduce_dir)
+        if not reducer_path_exists:
+            os.makedirs(reduce_dir)
+        self.reducer_dir = reduce_dir
 
         # Intilaizing master config
         self.number_of_mappers = number_of_mappers
@@ -73,6 +79,18 @@ class Master:
         # mapper.start_mapper()
 
         print("Finished with mapper execution")
+
+        # Once the mappers have finished their job we will start reducer workers
+        # In this case as we only have to do single threaded implementation
+        # we will start only one worker for mid project milestone
+
+        print("Starting the reduce job")
+        reducer = Reducer(self.mapper_dir,self.reducer_dir,self.user_defined_reduce)
+        executor.submit(reducer.start_reducer())
+        print(f"Reducer job finished successfully please find the final output in {self.reducer_dir}")
+
+
+
 
 
 
