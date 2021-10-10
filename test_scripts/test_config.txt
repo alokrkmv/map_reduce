@@ -1,0 +1,1 @@
+{"input_file":"test_scores.txt","number_of_mapper":"3","number_of_reducer":"4"}
