@@ -16,7 +16,7 @@ class Mapper:
         # import pdb
         # pdb.set_trace()
         key,value = emmiter_tuple[0],emmiter_tuple[1]
-        self.map_data[key] = value
+        self.map_data[key].append(value)
     # Dump the data into output (As we are only dealing with a single thread as of now so
     # we don't need to worry about dumping to multiple files
     def write_data(self):
@@ -27,7 +27,7 @@ class Mapper:
     # Start the execution of map
     def start_mapper(self):
         # intialized the empty data container
-        self.map_data = defaultdict(lambda : list)
+        self.map_data = defaultdict(list)
         counter = 0
         for dat in self.input_data:
             self.udf(counter, dat.rstrip('\n'), self.emit_intermediate)
