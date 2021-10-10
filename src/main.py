@@ -36,6 +36,7 @@ def read_configs(file_path):
 def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
     master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce)
     master_instance.start_process()
+    return master_instance.read_output()
 
 # The master class which will set all the configs and start the execution of mapper and reducers
 class Master:
@@ -88,6 +89,22 @@ class Master:
         reducer = Reducer(self.mapper_dir,self.reducer_dir,self.user_defined_reduce)
         executor.submit(reducer.start_reducer())
         print(f"Reducer job finished successfully please find the final output in {self.reducer_dir}")
+
+    # This function reads the final output file and
+    def read_output(self):
+
+        file_path = f"{self.reducer_dir}/{'0.txt'}"
+        final_dict = {}
+        try:
+            with open(file_path, 'r') as outputfile:
+                for item in outputfile:
+                    final_dict = json.loads(item)
+            return final_dict
+        except Exception as e:
+            sys.exit("Something went wrong in fetching the output from final file")
+
+
+
 
 
 

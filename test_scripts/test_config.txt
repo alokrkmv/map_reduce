@@ -1,1 +1,1 @@
-{"input_file":"hamlet.txt","number_of_mapper":"1","number_of_reducer":"1"}
+{"input_file":"hamlet_formatted.txt","number_of_mapper":"1","number_of_reducer":"1"}

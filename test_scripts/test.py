@@ -4,6 +4,9 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
 
 from main import read_configs, initialize_master
 
+import sys
+import string
+
 def test_configs():
 
     file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config.txt"
@@ -14,61 +17,88 @@ def test_configs():
 # if __name__=='__main__':
 #     test_configs()
 
+# Function to clean the text file ( Remove the punctuations upper or lower casing etc)
+def clean_file():
+    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/hamlet.txt"
+    test_file = open(file_path)
+    st = test_file.read()
+    test_file.close()
+    exclude = set(string.punctuation)
+    exclude.add("/n")
+    # print(exclude)
+    st = ''.join(ch.lower() for ch in st if ch not in exclude)
+    st_array = st.split()
+    # print(type(st_array))
+    res = []
+    for el in st_array:
+        res.append(el.replace("\n", ""))
+    final_string = res[0]
+    for i in range(1, len(res)):
+        final_string = final_string + " " + res[i]
+    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/hamlet_formatted.txt", "w")
+    file.write(final_string)
+    file.close()
+
+# Function to get the count from traditional method of iteration
+def traditional_count():
+    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/hamlet_formatted.txt"
+    text_file = open(file_path, "r")
+
+    # read whole file to a string
+    data = text_file.read()
+
+    # close file
+    text_file.close()
+
+    # break the string into list of words
+    str_list = data.split()
+
+    # gives set of unique words
+    unique_words = set(str_list)
+
+    traditional_count = {}
+
+    for words in unique_words:
+        traditional_count[words] = str_list.count(words)
+    return traditional_count
+
+def compare_results(traditional_count,map_reduce_word_count):
+    mismatch_dict = {k: traditional_count[k] for k in traditional_count if k in map_reduce_word_count and traditional_count[k] != map_reduce_word_count[k]}
+    if len(mismatch_dict) == 0:
+        print("Traditional word count and map reduce word count is exactly same")
+    else:
+        print("There is some error in the word count from map_reduce_word_count")
+
 if __name__ == '__main__':
-#     mp.set_start_method("fork")
-#     print("""
-# TEST #1: Word Count
-# -------------------
-# """)
+    # Generate the cleaned file after removing all the punctuations and casing
+    clean_file()
 
-
-    # Define custom mapper function
-    def udf_mapper(key, value, emitter):
+    # User defined mapper
+    def udf_mapper(key, value, emit_intermediate):
         split_values = value.split(' ')
         for split in split_values:
-            emitter((split, 1))
+            emit_intermediate((split, 1))
 
 
-    # Define custom reducer function
-    def udf_reducer(key, values, emitter):
+    # user_defined_reduce
+    def udf_reducer(key, values, emit_final):
         result = 0
         for v in values:
             result += v
-        emitter(key, result)
+        emit_final(key, result)
 
 
     try:
-        # import pdb
-        # pdb.set_trace()
-        # Execute MapReduce job
+        clean_file()
         file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config.txt"
         file_name, mapper, reducer = read_configs(file_path)
         file_name = "test_scripts/" + file_name
-        mapred = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
+        map_reduce_ouput = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
 
-    #     # Sequential test verification
-    #     print("Verifying MapReduce results:")
-    #     # Read MapReduce results
-    #     output_arr = mapred.read_output()
-    #     word_count_mapred = {}
-    #     for line in output_arr:
-    #         word, count = line.rsplit(':', 1)
-    #     word_count_mapred[word] = int(count)
-    #     # Compute sequential results
-    #     word_count_seq = {}
-    #     with open('data/hamlet.txt', 'r') as reader:
-    #         input_data = reader.readlines()
-    #     for idx, line in enumerate(input_data):
-    #         line = line.rstrip('\n')
-    #         for word in line.split(' '):
-    #             if word not in word_count_seq:
-    #                 word_count_seq[word] = 0
-    #             word_count_seq[word] += 1
-    #     for word in word_count_mapred:
-    #         if word_count_mapred[word] != word_count_seq[word]:
-    #             print('FAIL')
-    #             exit()
-    #     print('PASS')
+        # map_reduce_ouput = master_thread.read_output()
+        iterative_count = traditional_count()
+        compare_results(iterative_count,map_reduce_ouput)
     except ValueError as v:
-        print(v)
+        sys.exit("Something went wrong in running test script 1")
+
 
