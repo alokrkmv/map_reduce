@@ -2,7 +2,8 @@
 Authors : Alok, Ritvika, Sidharth
 Created at : 10/09/2021
 '''
-from random import random
+import os.path
+import random
 from concurrent.futures import ProcessPoolExecutor
 
 '''
@@ -30,15 +31,24 @@ def read_configs(file_path):
 
     return file_name,mapper,reducer
 
+# Function to intialize master and transfer control
+def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
+    master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce)
+    master_instance.start_process()
+
 # The master class which will set all the configs and start the execution of mapper and reducers
 class Master:
     def __init__(self,number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
-        self.worker_id = random.randit(3000, 5000)
+        self.worker_id = random.randint(3000, 5000)
 
         # Creating the directory where mapper worker will save their intermediate output
-        self.mapper_dir = f'./intermediate/{self.worker_id}'
+        mapper_dir = f'./intermediate/{self.worker_id}'
+        mapper_path_exists = os.path.exists(mapper_dir)
+        if not mapper_path_exists:
+            os.makedirs(mapper_dir)
+        self.mapper_dir = mapper_dir
         # Creating the final reduce directory where final output from reducer will save their output
-        self.reducer_dir = f'./reducer/{self.worker_id}'
+        # self.reducer_dir = f'./reducer/{self.worker_id}'
 
         # Intilaizing master config
         self.number_of_mappers = number_of_mappers
@@ -60,6 +70,10 @@ class Master:
         # Starting just a single worker as per the mid milestone requirement
         executor = ProcessPoolExecutor(max_workers=1)
         executor.submit(mapper.start_mapper())
+        # mapper.start_mapper()
+
+        print("Finished with mapper execution")
+
 
 
 
