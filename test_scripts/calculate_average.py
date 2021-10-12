@@ -51,7 +51,7 @@ if __name__ == '__main__':
         split_values = value.split(',')
         student_name = split_values[0]
         for split in split_values[1:]:
-            emit_intermediate((student_name, split))
+            emit_intermediate((student_name, int(split)))
 
     # user_defined_reduce
     def udf_reducer(key, values, emit_final):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         percentage_student=0.00
         total_score=50
         for v in values:
-            result += int(v)
+            result += v
             percentage_student=(result/total_score)*100
         emit_final(key, percentage_student)
 
