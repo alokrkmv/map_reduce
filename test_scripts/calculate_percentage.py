@@ -9,14 +9,14 @@ import string
 
 def test_configs():
 
-    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/average_dataset.txt"
+    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/percentage_dataset.txt"
 
     file_name,mapper,reducer = read_configs(file_path)
     print(type(file_name),type(mapper),type(reducer))
 # if __name__=='__main__':
 #     test_configs()
-def traditional_count():
-    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/average_dataset.txt"
+def traditional_percentage():
+    file_path = os.path.abspath(os.getcwd()) + "/test_scripts/percentage_dataset.txt"
     text_file = open(file_path, "r")
 
     # read whole file to a string
@@ -26,23 +26,23 @@ def traditional_count():
     text_file.close()
     # break the string into list of words
     str_list = data.split()
-    traditional_count = {}
+    traditional_percentage = {}
     for i in str_list:
         temp=i.split(",",1)
         scores=temp[1]
         final_scores=scores.split(",")
         traditional_sum=int(final_scores[0])+int(final_scores[1])+int(final_scores[2])+int(final_scores[3])+int(final_scores[4])
-        percentage_traditional=(traditional_sum/50)*100
-        traditional_count[i[0]]=percentage_traditional
+        percentage_score=(traditional_sum/50)*100
+        traditional_percentage[i[0]]=percentage_score
 
-    return traditional_count
+    return traditional_percentage
 
-def compare_results(traditional_count,map_reduce_word_count):
-    mismatch_dict = {k: traditional_count[k] for k in traditional_count if k in map_reduce_word_count and traditional_count[k] != map_reduce_word_count[k]}
+def compare_results(traditional_percentage,map_reduce_ouput):
+    mismatch_dict = {k: traditional_percentage[k] for k in traditional_percentage if k in map_reduce_ouput and traditional_percentage[k] != map_reduce_ouput[k]}
     if len(mismatch_dict) == 0:
-        print("Traditional word count and map reduce word count is exactly same")
+        print("Traditional percentage and map reduce percentage is exactly same")
     else:
-        print("There is some error in the word count from map_reduce_word_count")
+        print("There is some error in the percentage from map_reduce_output")
 
 if __name__ == '__main__':
 
@@ -64,13 +64,13 @@ if __name__ == '__main__':
         emit_final(key, percentage_student)
 
     try:
-        file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config_average.txt"
+        file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config_percentage.txt"
         file_name, mapper, reducer = read_configs(file_path)
         file_name = "test_scripts/" + file_name
         map_reduce_ouput = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
 
         # map_reduce_ouput = master_thread.read_output()
-        iterative_count = traditional_count()
-        compare_results(iterative_count,map_reduce_ouput)
+        iterative_percentage = traditional_percentage()
+        compare_results(iterative_percentage,map_reduce_ouput)
     except ValueError as v:
         sys.exit("Something went wrong in running test script 1")
