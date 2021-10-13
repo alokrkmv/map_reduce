@@ -1,0 +1,1 @@
+{"input_file":"AgeData.txt","number_of_mapper":"1","number_of_reducer":"1"}
