@@ -31,7 +31,7 @@ def traditional_count():
         traditionalOutputData[i]=sorted(traditionalOutputData[i]) #sort the content for a given key
 
     # Creating the absoulte output file for testgrouping test script
-    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/traditional_age_group.txt", "w")
+    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/test_3.txt", "w")
     file.write(str(traditionalOutputData))
     return traditionalOutputData
 

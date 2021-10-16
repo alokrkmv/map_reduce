@@ -61,7 +61,7 @@ def traditional_count():
     for words in unique_words:
         traditional_count[words] = str_list.count(words)
 
-    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/actual_word_count.txt", "w")
+    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/test_1.txt", "w")
     file.write(str(traditional_count))
 
 

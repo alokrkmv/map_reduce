@@ -36,7 +36,7 @@ def traditional_percentage():
         traditional_percentage[i[0]]=percentage_score
     
     # Creating the absoulte output file for calculating percentage test script
-    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/traditional_percentage.txt", "w")
+    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/test_2.txt", "w")
     file.write(str(traditional_percentage))
 
     return traditional_percentage
