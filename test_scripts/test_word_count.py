@@ -24,14 +24,14 @@ def clean_file():
     st = test_file.read()
     test_file.close()
     exclude = set(string.punctuation)
-    exclude.add("/n")
+    # exclude.add("/n")
     # print(exclude)
     st = ''.join(ch.lower() for ch in st if ch not in exclude)
     st_array = st.split()
     # print(type(st_array))
     res = []
-    for el in st_array:
-        res.append(el.replace("\n", ""))
+    # for el in st_array:
+        # res.append(el.replace("\n", ""))
     final_string = res[0]
     for i in range(1, len(res)):
         final_string = final_string + " " + res[i]

@@ -1,1 +1,1 @@
-{"input_file":"percentage_dataset.txt","number_of_mapper":"1","number_of_reducer":"1"}
+{"input_file":"percentage_dataset.txt","number_of_mapper":"3","number_of_reducer":"3"}
