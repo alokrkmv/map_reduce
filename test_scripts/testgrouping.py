@@ -29,31 +29,8 @@ def traditional_count():
             continue
     for i in traditionalOutputData:
         traditionalOutputData[i]=sorted(traditionalOutputData[i]) #sort the content for a given key
-
-    # Creating the absoulte output file for testgrouping test script
-    file = open(os.path.abspath(os.getcwd()) + "/test_scripts/ActualOutputs/test_3.txt", "w")
-    file.write(str(traditionalOutputData))
     return traditionalOutputData
 
-    
-
-    # read whole file to a string
-    '''data = text_file.read()
-
-    # close file
-    text_file.close()
-
-    # break the string into list of words
-    str_list = data.split()
-
-    # gives set of unique words
-    unique_words = set(str_list)
-
-    traditional_count = {}
-
-    for words in unique_words:
-        traditional_count[words] = str_list.count(words)
-    return traditional_count'''
 
 def compare_results(traditional_count,map_reduce_output):
     if(traditional_count==map_reduce_output):
@@ -76,14 +53,11 @@ if __name__ == '__main__':
 
 
     try:
-        #clean_file()
         file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config_group.txt"
         file_name, mapper, reducer = read_configs(file_path)
-        file_name = "test_scripts/" + file_name
+        file_name = "/test_scripts/" + file_name
         map_reduce_output = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
         iterative_count = traditional_count()
         compare_results(iterative_count,map_reduce_output)
     except ValueError as v:
         sys.exit("Something went wrong in running test script 1")
-
-
