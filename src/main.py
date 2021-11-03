@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor
 from time import time
 from os import path as ospath, listdir
 from pathlib import Path as pathlibpath
+import multiprocessing as mp
 
 '''
 This file contains scripts like reading the config from files. 
@@ -38,7 +39,7 @@ def read_configs(file_path):
 # Function to intialize master and transfer control
 def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
     master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce)
-    # master_instance.start_process()
+    master_instance.start_process()
     # return master_instance.read_output()
 
 # The master class which will set all the configs and start the execution of mapper and reducers
@@ -71,49 +72,78 @@ class Master:
         pathlibpath(ospath.dirname(
             f'{SPLIT_DIR}/')).mkdir(parents=True, exist_ok=True)
         with open(file_path, 'r') as reader:
-            mappers_used = set()
             n = 0
             line = reader.readline()
             while len(line) != 0:
                 if not line.endswith('\n'):
                     line += '\n'
                 mapper_id = n % self.number_of_mappers
-                mappers_used.add(mapper_id)
                 with open(f'{SPLIT_DIR}/{mapper_id}.txt', 'a') as writer:
                     writer.write(line)
                 line = reader.readline()
                 n += 1
-        if len(mappers_used) < self.number_of_mappers:
-            print(
-                f"Insufficient input lines. Setting mappers to {mappers_used}")
-            self.M = mappers_used
-    def start_process(self,number_of_workers=None):
+        self.input_files = [
+					f'{SPLIT_DIR}/{i}.txt' for i in range(self.number_of_mappers)]
+    def start_process(self):
         print("Running Mappers")
         # Instantiating  the mapper class
-        mapper = Mapper(self.input_file,self.mapper_dir,self.user_defined_map)
+        self.mappers = []
+        self.reducers = []
+        self.active_reducers = []
         '''
-        Using python process module instead of python thread module to avoid GIL
-        All though the same implementation can be extended to threads by using ThreadPoolExecutor instead 
-        of ProcessPoolExecutor.
+        We are moving from process pool executor to vanila multiprocessing so that fault tolerence can be implemented
         '''
-        self.mappers.append(Mapper(
-				idx, self.R, self.input_file_paths[idx], f'{self.TMP_DIR}/intermediate', map_func))
         
-        # Starting just a single worker as per the mid milestone requirement
-        executor = ProcessPoolExecutor(max_workers=1)
-        executor.submit(mapper.start_mapper())
+        for i in range(len(self.input_files)):
+            self.mappers.append(Mapper(self.input_files[i],f'{self.TMP_DIR}/intermediate',self.user_defined_map,i,self.number_of_reducers))
+        
+        # Starting  Mapper phase
+        self.processes = [None]*self.number_of_mappers
+        self.reducer_ids = [None]*self.number_of_mappers
+        self.ps = [None]*self.number_of_mappers
+        self.cs = [None]*self.number_of_mappers
+        self.mapper_status = [True]*self.number_of_mappers
+
+
+        # executor = ProcessPoolExecutor(max_workers=self.number_of_mappers)
+        # for i in range(0,self.number_of_mappers):
+        #     executor.submit(self.mappers[i].start_process)
+        # executor.submit(mapper.start_mapper())
         # mapper.start_mapper()
+
+        for i, m in enumerate(self.mappers):
+
+            #queue used for message passing
+            self.reducer_ids[i] = mp.Queue()
+            # ps[i], cs[i] = mp.Pipe()
+            self.cs[i] = mp.Queue()
+            self.processes[i] = mp.Process(target = m.start_mapper, args = (self.reducer_ids[i], self.cs[i]))
+            #execute mapper
+            self.processes[i].start()
 
         print("Finished with mapper execution")
 
-        # Once the mappers have finished their job we will start reducer workers
-        # In this case as we only have to do single threaded implementation
-        # we will start only one worker for mid project milestone
+        mapping_status = False
+        while (mapping_status == False):
+            mapping_status = True
+            for i, m in enumerate(self.mappers):
+                curr_status = None
+                while True:
+                    try:
+                        [curr_status, timestamp] = self.cs[i].get(timeout = self.timeout)
+                        break
+                    except:
+                        mapping_status = False
+                        break
 
-        print("Starting the reduce job")
-        reducer = Reducer(self.mapper_dir,self.reducer_dir,self.user_defined_reduce)
-        executor.submit(reducer.start_reducer())
-        print(f"Reducer job finished successfully please find the final output in {self.reducer_dir}")
+            if curr_status == 'D' and self.mapper_status[i] == True:				
+                self.mapper_status[i] = False
+                #get all valid reducer_ids
+                self.active_reducers += self.reducer_ids[i].get()
+                #wait until all processes have been completed
+                self.processes[i].join()
+            else:
+                mapping_status = True
 
     # This function reads the final output file and
     def read_output(self):
