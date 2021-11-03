@@ -54,15 +54,6 @@ class Master:
 
         #master reading data
         file_path=os.path.abspath(os.getcwd()) +self.input_file
-        # textFile=open(file_path,"r")
-        # data=textFile.readlines()
-        # # import pdb;pdb.set_trace()
-        # splitLength=len(data)//self.number_of_mappers
-        # splittedData=self.splitList(data,splitLength)
-
-        # random_ids = []
-        # for i in range(self.number_of_mappers):
-        #     random_ids.append(random.randint(3000, 5000))
 
         self.job_id = f'{int(time())}'
 
@@ -96,31 +87,6 @@ class Master:
             print(
                 f"Insufficient input lines. Setting mappers to {mappers_used}")
             self.M = mappers_used
-        # for i in range(0,self.number_of_mappers):
-            
-        #     # Creating the directory where master will save the splitted input
-        #     master_dir = f'./tmp/{self.job_id}/input/'
-        #     master_path_exists = os.path.exists(master_dir)
-        #     if not master_path_exists:
-        #         os.makedirs(master_dir)
-        #     self.master_dir = master_dir
-        #     inputMapperData=splittedData[i]
-        #     self.write_data(inputMapperData,self.master_dir)
-        
-            # # Creating the directory where mapper worker will save their intermediate output
-            # mapper_dir = f'./intermediate/{self.worker_id}'
-            # mapper_path_exists = os.path.exists(mapper_dir)
-            # if not mapper_path_exists:
-            #     os.makedirs(mapper_dir)
-            # self.mapper_dir = mapper_dir
-
-            # # Creating the final reduce output directory where final output from reducer will save their output
-            # reduce_dir = f'./final_output/{self.worker_id}'
-            # reducer_path_exists = os.path.exists(reduce_dir)
-            # if not reducer_path_exists:
-            #     os.makedirs(reduce_dir)
-            # self.reducer_dir = reduce_dir
-
     def start_process(self,number_of_workers=None):
         print("Running Mappers")
         # Instantiating  the mapper class
@@ -130,6 +96,8 @@ class Master:
         All though the same implementation can be extended to threads by using ThreadPoolExecutor instead 
         of ProcessPoolExecutor.
         '''
+        self.mappers.append(Mapper(
+				idx, self.R, self.input_file_paths[idx], f'{self.TMP_DIR}/intermediate', map_func))
         
         # Starting just a single worker as per the mid milestone requirement
         executor = ProcessPoolExecutor(max_workers=1)
@@ -159,17 +127,6 @@ class Master:
             return final_dict
         except Exception as e:
             sys.exit("Something went wrong in fetching the output from final file")
-
-    # def splitList(self,a,n):
-    #     b={}
-    #     counter=0
-    #     for i in range(0,len(a),n):
-    #         #print('value of i',i)
-    #         #print('value of n',n)
-    #         b[counter]=a[i:i+n]
-    #         counter+=1
-    #         #print(b)
-    #     return b
 
     def write_data(self,writeData,output_path):
         out_file = f"{output_path}/{'0.txt'}"
