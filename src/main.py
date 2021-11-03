@@ -9,6 +9,9 @@ from time import time
 from os import path as ospath, listdir
 from pathlib import Path as pathlibpath
 import multiprocessing as mp
+import sys
+import shutil
+
 
 '''
 This file contains scripts like reading the config from files. 
@@ -52,6 +55,7 @@ class Master:
         self.input_file = input_file
         self.user_defined_map = user_defined_map
         self.user_defined_reduce = user_defined_reduce
+        self.timeout = 3
 
         #master reading data
         file_path=os.path.abspath(os.getcwd()) +self.input_file
@@ -65,6 +69,7 @@ class Master:
             self.job_id += f'-{i}'
         
         self.TMP_DIR = f'./tmp/{self.job_id}'
+        self.OUT_DIR = f'./output/{self.job_id}'
 
         #to split data as per number of mappers
         SPLIT_DIR = f"{self.TMP_DIR}/input"
@@ -135,15 +140,65 @@ class Master:
                     except:
                         mapping_status = False
                         break
-
-            if curr_status == 'D' and self.mapper_status[i] == True:				
+            	
+            if curr_status == 'D' and self.mapper_status[i] == True:
+                			
                 self.mapper_status[i] = False
                 #get all valid reducer_ids
                 self.active_reducers += self.reducer_ids[i].get()
                 #wait until all processes have been completed
                 self.processes[i].join()
             else:
-                mapping_status = True
+                mapping_status = False
+
+    # reduce phase
+
+        # self.active_reducers = (list(set(self.number_of_reducers)))
+        self.processes = [None]*self.number_of_reducers
+        self.cs = [None]*self.number_of_reducers
+        self.reducer_status = [True]*self.number_of_reducers
+        for i in range(0,self.number_of_reducers):
+            self.reducers.append(Reducer(
+                f'{self.TMP_DIR}/intermediate', self.OUT_DIR, self.user_defined_reduce,i, self.number_of_mappers, ))
+        for i, r in enumerate(self.reducers):
+            
+            
+            self.cs[i] = mp.Queue()
+            self.processes[i] = mp.Process(target = r.start_reducer, args=(self.cs[i], ))
+            self.processes[i].start()
+        reducing_status =  False
+        # import pdb; pdb.set_trace()
+        while reducing_status == False:
+            reducing_status = True
+            for i, r in enumerate(self.reducers):
+                curr_status = None
+
+                while True:
+                    try:
+                        #print(self.reducer_status[i])
+                        
+                        [curr_status, timestamp] = self.cs[i].get(timeout = self.timeout)
+                        break
+                    except:
+                        reducing_status = False
+                        break
+                if curr_status == 'D' and self.reducer_status[i] == True:
+                    self.reducer_status[i] = False
+                    self.processes[i].join()
+                elif curr_status == 'R':
+                    reducing_status = True
+        
+        print(f"Reducers Finished please find the ouput in ouput/{self.job_id}")
+
+        # Removing the temporary directory
+
+        file_path = f'{self.TMP_DIR}'
+        try:
+            shutil.rmtree(file_path)
+        except OSError as e:
+            print("Error: %s : %s" % (file_path, e.strerror))
+
+        
 
     # This function reads the final output file and
     def read_output(self):
