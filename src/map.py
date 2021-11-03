@@ -24,8 +24,7 @@ class Mapper:
         key,value = emmiter_tuple[0],emmiter_tuple[1]
         reducer_id = hash(key) % self.number_of_reducers
         self.map_data[reducer_id][key].append(value)
-    # Dump the data into output (As we are only dealing with a single thread as of now so
-    # we don't need to worry about dumping to multiple files
+    # Dump the data into output.
     def write_data(self):
         Path(path.dirname(
 			f'{self.output_path}/')).mkdir(parents=True, exist_ok=True)

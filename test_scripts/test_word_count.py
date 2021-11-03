@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
 
 from main import read_configs, initialize_master
@@ -13,9 +14,6 @@ def test_configs():
 
     file_name,mapper,reducer = read_configs(file_path)
     print(type(file_name),type(mapper),type(reducer))
-
-# if __name__=='__main__':
-#     test_configs()
 
 # Function to clean the text file ( Remove the punctuations upper or lower casing etc)
 def clean_file():
@@ -73,10 +71,21 @@ def compare_results(traditional_count,map_reduce_word_count):
         print("Traditional word count and map reduce word count is exactly same")
     else:
         print("There is some error in the word count from map_reduce_word_count")
+def map_reduce_output():
+
+    file_path = os.path.abspath(os.getcwd())+"/output/thread_outputs/test_1.txt"
+    final_dict = {}
+    try:
+        with open(file_path, 'r') as outputfile:
+            for item in outputfile:
+                final_dict = json.loads(item)
+        return final_dict
+    except Exception as e:
+        sys.exit("Something went wrong in fetching the output from final file")
 
 if __name__ == '__main__':
     # Generate the cleaned file after removing all the punctuations and casing
-    clean_file()
+    # clean_file()
 
     # User defined mapper
     def udf_mapper(key, value, emit_intermediate):
@@ -94,15 +103,16 @@ if __name__ == '__main__':
 
 
     try:
-        clean_file()
+        # clean_file()
         file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config.txt"
         file_name, mapper, reducer = read_configs(file_path)
-        file_name = "test_scripts/" + file_name
-        map_reduce_ouput = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
-
+        file_name = "/test_scripts/" + file_name
+        initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer,None)
+        map_reduce_word_count = map_reduce_output()
         # map_reduce_ouput = master_thread.read_output()
         iterative_count = traditional_count()
-        compare_results(iterative_count,map_reduce_ouput)
+        
+        compare_results(iterative_count,map_reduce_word_count)
     except ValueError as v:
         sys.exit("Something went wrong in running test script 1")
 

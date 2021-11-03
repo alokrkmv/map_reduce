@@ -39,15 +39,17 @@ def read_configs(file_path):
 
     return file_name,mapper,reducer
 
+
+
 # Function to intialize master and transfer control
-def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
-    master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce)
+def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx):
+    master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx)
     master_instance.start_process()
     # return master_instance.read_output()
 
 # The master class which will set all the configs and start the execution of mapper and reducers
 class Master:
-    def __init__(self,number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce):
+    def __init__(self,number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx):
         #moved it to above from below
         # Intilaizing master config
         self.number_of_mappers = number_of_mappers
@@ -56,6 +58,7 @@ class Master:
         self.user_defined_map = user_defined_map
         self.user_defined_reduce = user_defined_reduce
         self.timeout = 3
+        self.kill_idx = kill_idx
 
         #master reading data
         file_path=os.path.abspath(os.getcwd()) +self.input_file
@@ -89,6 +92,21 @@ class Master:
                 n += 1
         self.input_files = [
 					f'{SPLIT_DIR}/{i}.txt' for i in range(self.number_of_mappers)]
+    def retry(self, i, num_workers, kill_idx):
+
+        # Restart a new mapper if the previous one is killed
+        
+        #communicate worker failure to the user
+        print (f"Mapper {i}  of {num_workers} has crashed, generating a new worker")
+        self.processes[i].kill()
+        self.reducer_ids[i] = mp.Queue()
+        
+        # Restart the process
+        self.processes[i] = mp.Process(target = self.mappers[i].start_mapper, args = (self.reducer_ids[i], self.cs[i]))
+        
+        # Execute Worker
+        self.processes[i].start()
+
     def start_process(self):
         print("Running Mappers")
         # Instantiating  the mapper class
@@ -109,13 +127,6 @@ class Master:
         self.cs = [None]*self.number_of_mappers
         self.mapper_status = [True]*self.number_of_mappers
 
-
-        # executor = ProcessPoolExecutor(max_workers=self.number_of_mappers)
-        # for i in range(0,self.number_of_mappers):
-        #     executor.submit(self.mappers[i].start_process)
-        # executor.submit(mapper.start_mapper())
-        # mapper.start_mapper()
-
         for i, m in enumerate(self.mappers):
 
             #queue used for message passing
@@ -125,6 +136,10 @@ class Master:
             self.processes[i] = mp.Process(target = m.start_mapper, args = (self.reducer_ids[i], self.cs[i]))
             #execute mapper
             self.processes[i].start()
+            if self.kill_idx == i:
+                print (f"Killing process {i} to simulate fault tolerence")
+                self.processes[i].kill()
+
 
         print("Finished with mapper execution")
 
@@ -138,8 +153,7 @@ class Master:
                         [curr_status, timestamp] = self.cs[i].get(timeout = self.timeout)
                         break
                     except:
-                        mapping_status = False
-                        break
+                        self.retry(i, self.number_of_mappers, self.kill_idx)
             	
             if curr_status == 'D' and self.mapper_status[i] == True:
                 			
@@ -152,8 +166,6 @@ class Master:
                 mapping_status = False
 
     # reduce phase
-
-        # self.active_reducers = (list(set(self.number_of_reducers)))
         self.processes = [None]*self.number_of_reducers
         self.cs = [None]*self.number_of_reducers
         self.reducer_status = [True]*self.number_of_reducers
@@ -201,17 +213,6 @@ class Master:
         
 
     # This function reads the final output file and
-    def read_output(self):
-
-        file_path = f"{self.reducer_dir}/{'0.txt'}"
-        final_dict = {}
-        try:
-            with open(file_path, 'r') as outputfile:
-                for item in outputfile:
-                    final_dict = json.loads(item)
-            return final_dict
-        except Exception as e:
-            sys.exit("Something went wrong in fetching the output from final file")
 
     def write_data(self,writeData,output_path):
         out_file = f"{output_path}/{'0.txt'}"
