@@ -70,11 +70,11 @@ if __name__ == '__main__':
     try:
         file_path = os.path.abspath(os.getcwd()) + "/test_scripts/test_config_percentage.txt"
         file_name, mapper, reducer = read_configs(file_path)
-        file_name = "test_scripts/" + file_name
-        map_reduce_ouput = initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer)
+        file_name = "/test_scripts/" + file_name
+        initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer,None)
 
         # map_reduce_ouput = master_thread.read_output()
-        iterative_percentage = traditional_percentage()
-        compare_results(iterative_percentage,map_reduce_ouput)
+        # iterative_percentage = traditional_percentage()
+        # compare_results(iterative_percentage,map_reduce_ouput)
     except ValueError as v:
         sys.exit("Something went wrong in running test script 1")
