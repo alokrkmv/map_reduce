@@ -27,11 +27,10 @@ def read_configs(file_path):
     try:
         with open(file_path,'r') as conf_file:
 
+            # Reading the config file
             for item in conf_file:
                 configs = json.loads(item)
                 file_name = configs.get("input_file",None)
-                # In the first milestone we are doing single threaded application of map reduce so we will
-                # be only using one mapper and one reducer
                 mapper = int(configs.get("number_of_mapper",None))
                 reducer = int(configs.get("number_of_reducer",None))
     except Exception as e:
@@ -45,12 +44,10 @@ def read_configs(file_path):
 def initialize_master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx):
     master_instance = Master(number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx)
     master_instance.start_process()
-    # return master_instance.read_output()
 
 # The master class which will set all the configs and start the execution of mapper and reducers
 class Master:
     def __init__(self,number_of_mappers,number_of_reducers,input_file,user_defined_map,user_defined_reduce,kill_idx):
-        #moved it to above from below
         # Intilaizing master config
         self.number_of_mappers = number_of_mappers
         self.number_of_reducers = number_of_reducers
@@ -59,7 +56,6 @@ class Master:
         self.user_defined_reduce = user_defined_reduce
         self.timeout = 3
         self.kill_idx = kill_idx
-
         #master reading data
         file_path=os.path.abspath(os.getcwd()) +self.input_file
 
@@ -74,9 +70,9 @@ class Master:
         self.TMP_DIR = f'./tmp/{self.job_id}'
         self.OUT_DIR = f'./output/{self.job_id}'
 
-        #to split data as per number of mappers
+        #To split data as per number of mappers
         SPLIT_DIR = f"{self.TMP_DIR}/input"
-				# Create input_splits directory
+				# Creating the directory for the input data
         pathlibpath(ospath.dirname(
             f'{SPLIT_DIR}/')).mkdir(parents=True, exist_ok=True)
         with open(file_path, 'r') as reader:
@@ -96,12 +92,12 @@ class Master:
 
         # Restart a new mapper if the previous one is killed
         
-        #communicate worker failure to the user
+        # Print any worker failure to console
         print (f"Mapper {i}  of {num_workers} has crashed, generating a new worker")
         self.processes[i].kill()
         self.reducer_ids[i] = mp.Queue()
         
-        # Restart the process
+        # Restart the process if the previous one is killed
         self.processes[i] = mp.Process(target = self.mappers[i].start_mapper, args = (self.reducer_ids[i], self.cs[i]))
         
         # Execute Worker
@@ -129,17 +125,16 @@ class Master:
 
         for i, m in enumerate(self.mappers):
 
-            #queue used for message passing
+            # Message queue for communicating with the mapper
             self.reducer_ids[i] = mp.Queue()
-            # ps[i], cs[i] = mp.Pipe()
             self.cs[i] = mp.Queue()
             self.processes[i] = mp.Process(target = m.start_mapper, args = (self.reducer_ids[i], self.cs[i]))
-            #execute mapper
+            # Start the execution of Mappers
             self.processes[i].start()
+            # If kill index is set then kill the mapper
             if self.kill_idx == i:
                 print (f"Killing process {i} to simulate fault tolerence")
                 self.processes[i].kill()
-
 
         print("Finished with mapper execution")
 
@@ -158,14 +153,14 @@ class Master:
             if curr_status == 'D' and self.mapper_status[i] == True:
                 			
                 self.mapper_status[i] = False
-                #get all valid reducer_ids
+                # Keeping track of the number of active reducers
                 self.active_reducers += self.reducer_ids[i].get()
-                #wait until all processes have been completed
+                # Wait until all processes have been completed
                 self.processes[i].join()
             else:
                 mapping_status = False
 
-    # reduce phase
+    # Reduce phase
         self.processes = [None]*self.number_of_reducers
         self.cs = [None]*self.number_of_reducers
         self.reducer_status = [True]*self.number_of_reducers
@@ -179,7 +174,7 @@ class Master:
             self.processes[i] = mp.Process(target = r.start_reducer, args=(self.cs[i], ))
             self.processes[i].start()
         reducing_status =  False
-        # import pdb; pdb.set_trace()
+     
         while reducing_status == False:
             reducing_status = True
             for i, r in enumerate(self.reducers):
@@ -187,7 +182,7 @@ class Master:
 
                 while True:
                     try:
-                        #print(self.reducer_status[i])
+                      
                         
                         [curr_status, timestamp] = self.cs[i].get(timeout = self.timeout)
                         break

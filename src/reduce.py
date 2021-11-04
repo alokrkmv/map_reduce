@@ -5,8 +5,7 @@ from os import path
 
 class Reducer:
     def __init__(self,intermediate_file_path,final_output_path,udf,id,number_of_mappers):
-        # import pdb
-        # pdb.set_trace()
+       
         self.intermediate_file_path = intermediate_file_path
         self.final_output_path = final_output_path
         self.udf = udf
@@ -29,10 +28,9 @@ class Reducer:
 
     # Create the generate final output
     def emit_final(self, key, value):
-        # import pdb
-        # pdb.set_trace()
-        # key, value = reduced_tuple[0], reduced_tuple[1]
+     
         self.reduced_data[key] = value
+        
     # Write the final output to the ouput file
     def write_data(self):
         Path(path.dirname(
@@ -49,7 +47,6 @@ class Reducer:
         self.reduced_data = {}
         for key,values in self.final_dict.items():
             self.udf(key, values, self.emit_final)
-            # update_status.put([self.status, True])
         self.status = 'D'
         update_status.put([self.status, True])
         self.write_data()

@@ -35,7 +35,7 @@ class Mapper:
             with open(out_file,'w') as outfile:
                 json.dump(self.map_data[reducer],outfile)
 
-
+    
     # Start the execution of map
     def start_mapper(self,active_reducers, update_status):
         self.map_data = defaultdict(list)
