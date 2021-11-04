@@ -30,7 +30,6 @@ class Reducer:
     def emit_final(self, key, value):
      
         self.reduced_data[key] = value
-        
     # Write the final output to the ouput file
     def write_data(self):
         Path(path.dirname(

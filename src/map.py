@@ -19,8 +19,6 @@ class Mapper:
 
     # Emitter function to emit the data into a dict
     def emit_intermediate(self,emmiter_tuple):
-        # import pdb
-        # pdb.set_trace()
         key,value = emmiter_tuple[0],emmiter_tuple[1]
         reducer_id = hash(key) % self.number_of_reducers
         self.map_data[reducer_id][key].append(value)
@@ -35,7 +33,7 @@ class Mapper:
             with open(out_file,'w') as outfile:
                 json.dump(self.map_data[reducer],outfile)
 
-    
+
     # Start the execution of map
     def start_mapper(self,active_reducers, update_status):
         self.map_data = defaultdict(list)

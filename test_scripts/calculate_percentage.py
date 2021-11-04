@@ -13,8 +13,6 @@ def test_configs():
 
     file_name,mapper,reducer = read_configs(file_path)
     print(type(file_name),type(mapper),type(reducer))
-# if __name__=='__main__':
-#     test_configs()
 def traditional_percentage():
     file_path = os.path.abspath(os.getcwd()) + "/test_scripts/percentage_dataset.txt"
     text_file = open(file_path, "r")
@@ -73,8 +71,5 @@ if __name__ == '__main__':
         file_name = "/test_scripts/" + file_name
         initialize_master(mapper, reducer, file_name, udf_mapper, udf_reducer,None)
 
-        # map_reduce_ouput = master_thread.read_output()
-        # iterative_percentage = traditional_percentage()
-        # compare_results(iterative_percentage,map_reduce_ouput)
     except ValueError as v:
         sys.exit("Something went wrong in running test script 1")
